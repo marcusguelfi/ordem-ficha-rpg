@@ -6,10 +6,6 @@ const nextConfig = {
   sassOptions: {
     includePaths: [path.join(__dirname, 'src/styles')],
   },
-  typescript: {
-    // Ignorar erros de tipo durante o build (serão verificados em desenvolvimento)
-    ignoreBuildErrors: true,
-  },
 };
 
 module.exports = nextConfig;

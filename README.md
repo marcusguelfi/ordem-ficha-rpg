@@ -1,64 +1,99 @@
-Ordem RPG
-Sistema de RPG em tempo real com gerenciamento de personagens, atributos, equipamentos e combate. Construído com Next.js, Prisma e MariaDB.
+## Ordem RPG
+Sistema de RPG em tempo real com fichas digitais, painel administrativo e fluxo de jogo integrado. A stack principal combina **Next.js 12**, **Prisma**, **MariaDB 11** e **Socket.io**, empacotados para execução em Docker.
 
-🎮 Características
-Gerenciamento de Personagens - Criar e gerenciar jogadores com atributos, skills e equipamentos
-Sistema de Atributos - Atributos dinâmicos com status e modificadores
-Equipamentos e Itens - Sistema completo de equipamentos, moedas e inventário
-Combate em Tempo Real - Sistema de dados e combate com socket.io
-Autenticação - Login seguro com iron-session
-Admin Dashboard - Painel administrativo para gerenciar ambiente
-Editor de Cenários - Editor integrado para criar e editar conteúdo
-Suporte a Múltiplas Plataformas - Desktop e retrato com websockets
+### 🎮 Funcionalidades
+- Gerenciamento completo de jogadores, atributos, equipamentos, itens e moedas
+- Painel do narrador com editores de cenário, NPCs e ambiente
+- Portrait/stream view em tempo real via websockets
+- Autenticação com `iron-session` e rotas protegidas por SSR
+- Migrações/sincronização de schema Prisma integradas ao container
 
-🛠️ Tecnologias
-Frontend: Next.js 12, React 17, Bootstrap 5, SASS
-Backend: Next.js API Routes, Node.js 18
-Banco de Dados: MariaDB 11, Prisma ORM
-Real-time: Socket.io
-Autenticação: iron-session, bcrypt
-Infraestrutura: Docker, Docker Compose
+### 🛠️ Stack
+| Camada     | Tecnologia |
+|------------|------------|
+| Frontend   | Next.js 12, React 17, Bootstrap 5, SASS |
+| Backend    | Next.js API Routes (Node.js 18) |
+| Banco      | MariaDB 11 (Prisma ORM) |
+| Tempo real | Socket.io 4 |
+| Auth       | iron-session + bcrypt |
+| Infra      | Docker + Docker Compose |
 
-📦 Requisitos
-Node.js >= ^16.0.0
+### ✅ Requisitos
+- Node.js ≥ 16 e npm ≥ 8 (para desenvolvimento local)
+- Docker Desktop + Docker Compose (para o ambiente containerizado)
+- MariaDB 11 (local ou via Docker)
 
-npm >= 8.0.0
+---
 
-Docker & Docker Compose (para produção)
+## Configuração de Ambiente
 
-MariaDB 11 (local ou Docker)
+### Variáveis obrigatórias
+Crie um arquivo `.env.local` (para dev) ou use variáveis no container:
 
-🚀 Início Rápido
+```
+DATABASE_URL=mysql://user:pass@host:3306/rpg
+SESSION_SECRET=uma-chave-aleatoria-com-32+ caracteres
+PORT=3000
+```
 
-# Instalar dependências
+> No `docker-compose.yml` já definimos `DATABASE_URL` (apontando para o serviço `db`) e um valor padrão para `SESSION_SECRET`. Ajuste conforme sua necessidade.
+
+### Banco local (opcional)
+Há um compose auxiliar em `DB-Local Docker/MariaDB-docker-compose.yml` que sobe apenas o MariaDB com dados iniciais. Use se quiser executar o Next.js fora do Docker.
+
+---
+
+## Desenvolvimento local (sem Docker)
+```bash
 npm install
+npx prisma db push         # cria/atualiza as tabelas
+npm run dev                # http://localhost:3000
+```
 
-# Configurar banco de dados local
-# Certifique-se que MariaDB está rodando em localhost:3306
+> Para popular dados padrão, faça um POST para `http://localhost:3000/api/init` após subir o servidor.
 
-# Sincronizar schema
-npx prisma db push
+---
 
-# Iniciar servidor de desenvolvimento
-npm run dev
+## Ambiente Docker
 
-Desenvolvimento Local
-Acesse http://localhost:3000
+O projeto possui um multi-stage Dockerfile baseado em `node:18-bullseye-slim`. O entrypoint aguarda o MariaDB ficar pronto, executa `npx prisma db push`, roda `npx prisma migrate deploy` e depois inicia o `next start`.
 
-Produção com Docker
-Acesse http://localhost:3000
+### Comandos principais
+```bash
+# subir aplicação + banco
+docker-compose up -d
 
+# acompanhar logs
+docker-compose logs -f app
+docker-compose logs -f db
 
-📝 Scripts Disponíveis
-npm run dev - Servidor de desenvolvimento
-npm run build - Build para produção
-npm start - Iniciar servidor de produção
-npm run lint - ESLint
+# encerrar serviços
+docker-compose down
+```
 
-🐳 Docker
-docker-compose up - Iniciar todos os serviços
-docker-compose down - Parar serviços
-docker-compose logs -f app - Ver logs da aplicação
-docker-compose logs -f db - Ver logs do banco
-📄 Licença
-Este projeto é privado.
+### Primeira inicialização
+1. `docker-compose up -d`
+2. POST em `http://localhost:3000/api/init` (pode usar `Invoke-WebRequest` ou `curl`)
+3. Acesse `http://localhost:3000` → a tela de login estará disponível.
+
+---
+
+## Scripts npm
+| Script         | Descrição |
+|----------------|-----------|
+| `npm run dev`  | Servidor Next.js em modo desenvolvimento |
+| `npm run build`| Build de produção (executa `next build`) |
+| `npm start`    | Inicia o servidor de produção (`next start -p $PORT`) |
+| `npm run lint` | ESLint |
+
+---
+
+## Dicas & Troubleshooting
+- **Erro “Certifique-se de ter integrado um banco de dados…”**: significa que o Prisma não conseguiu acessar a tabela `Config`. Rode `npx prisma db push` (ou suba via Docker e chame `/api/init`).
+- **Prisma reclamando de OpenSSL em Alpine**: já migramos para `node:18-bullseye-slim` e instalamos `openssl + ca-certificates`. Se usar outra imagem, garanta esses pacotes.
+- **Sessões**: defina `SESSION_SECRET` com uma string longa e secreta tanto no `.env` quanto no Docker.
+
+---
+
+## Licença
+Projeto privado. Uso restrito aos colaboradores autorizados.
